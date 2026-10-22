@@ -12,7 +12,7 @@ static void showBufferedIndicator() {
 
     auto winSize = CCDirector::sharedDirector()->getWinSize();
 
-    auto label = CCLabelBMFont::create("CLICK ASSIST", "bigFont.fnt");
+    auto label = CCLabelBMFont::create("BUFFERED", "bigFont.fnt");
     label->setScale(0.5f);
     label->setColor({0, 255, 120});
     label->setPosition({winSize.width / 2.f, winSize.height - 40.f});
@@ -25,13 +25,12 @@ static void showBufferedIndicator() {
     scene->addChild(label, 1000);
 }
 
-class $modify(AssistPlayer, PlayerObject) {
+class $modify(BufferedPlayer, PlayerObject) {
     struct Fields {
         float sinceClick = 9999.f;
-        bool pending = false;     // an early click is waiting for its moment
-        bool held = false;        // the real button state (what you are doing)
-        bool simulated = false;   // the mod is holding the button down for you
-        int releaseIn = 0;        // frames until the mod lets go after firing
+        bool pending = false;
+        bool held = false;
+        bool releaseNext = false;
     };
 
     // Player 1, and player 2 in dual mode
@@ -40,18 +39,10 @@ class $modify(AssistPlayer, PlayerObject) {
         return pl && (this == pl->m_player1 || this == pl->m_player2);
     }
 
-    // Cube, ball, robot and spider act on landing / orbs.
-    // Ship, UFO, wave and swing are hold/tap modes with nothing to time, so skip them.
+    // Cube, ball, robot and spider need to be on the ground to act.
+    // Ship, UFO, wave and swing are hold/tap modes with no landing, so skip them.
     bool needsGround() {
         return !(m_isShip || m_isBird || m_isDart || m_isSwing);
-    }
-
-    void stopAssist() {
-        if (m_fields->simulated && !m_fields->held) {
-            PlayerObject::releaseButton(PlayerButton::Jump);
-        }
-        m_fields->simulated = false;
-        m_fields->pending = false;
     }
 
     bool pushButton(PlayerButton btn) {
@@ -70,8 +61,6 @@ class $modify(AssistPlayer, PlayerObject) {
     bool releaseButton(PlayerButton btn) {
         if (btn == PlayerButton::Jump && this->isTrackedPlayer()) {
             m_fields->held = false;
-            // while the mod is holding the click for you, keep it held
-            if (m_fields->simulated) return true;
         }
         return PlayerObject::releaseButton(btn);
     }
@@ -80,53 +69,40 @@ class $modify(AssistPlayer, PlayerObject) {
         PlayerObject::update(dt);
         if (!this->isTrackedPlayer()) return;
 
-        if (m_fields->releaseIn > 0) {
-            m_fields->releaseIn--;
-            if (m_fields->releaseIn == 0 && !m_fields->held) {
-                PlayerObject::releaseButton(PlayerButton::Jump);
-            }
+        if (m_fields->releaseNext) {
+            m_fields->releaseNext = false;
+            if (!m_fields->held) PlayerObject::releaseButton(PlayerButton::Jump);
         }
 
         if (!m_fields->pending) return;
 
         // mode changed (e.g. portal into ship) while a click was waiting
         if (!this->needsGround()) {
-            this->stopAssist();
+            m_fields->pending = false;
             return;
         }
 
         m_fields->sinceClick += dt;
         float windowSec = static_cast<float>(Mod::get()->getSettingValue<double>("window")) / 1000.f;
 
-        // the click was too early, give up
         if (m_fields->sinceClick > windowSec) {
-            this->stopAssist();
+            m_fields->pending = false;
             return;
         }
 
-        // landed inside the window: the held click makes the jump this frame
         if (m_isOnGround) {
-            bool wasSimulated = m_fields->simulated;
             m_fields->pending = false;
-            m_fields->simulated = false;
-            if (wasSimulated) {
-                m_fields->releaseIn = 3;
-                log::info("Click assist fired");
+            if (!m_fields->held) {
+                PlayerObject::pushButton(PlayerButton::Jump);
+                m_fields->releaseNext = true;
+                log::info("Buffered jump fired");
                 showBufferedIndicator();
             }
-            return;
-        }
-
-        // still in the air: hold the click for you so the first valid
-        // moment (landing, or touching an orb) uses it
-        if (!m_fields->held && !m_fields->simulated) {
-            PlayerObject::pushButton(PlayerButton::Jump);
-            m_fields->simulated = true;
         }
     }
 };
 
-class $modify(AssistPauseLayer, PauseLayer) {
+class $modify(BufferPauseLayer, PauseLayer) {
     void onToggleBuffer(CCObject* sender) {
         auto toggler = static_cast<CCMenuItemToggler*>(sender);
         // the toggler reports its state from before the click
@@ -137,12 +113,12 @@ class $modify(AssistPauseLayer, PauseLayer) {
         PauseLayer::customSetup();
 
         auto toggler = CCMenuItemToggler::createWithStandardSprites(
-            this, menu_selector(AssistPauseLayer::onToggleBuffer), 0.7f
+            this, menu_selector(BufferPauseLayer::onToggleBuffer), 0.7f
         );
         toggler->toggle(Mod::get()->getSettingValue<bool>("enabled"));
         toggler->setPosition({30.f, 30.f});
 
-        auto label = CCLabelBMFont::create("Click Assist", "bigFont.fnt");
+        auto label = CCLabelBMFont::create("Input Buffer", "bigFont.fnt");
         label->setScale(0.4f);
         label->setAnchorPoint({0.f, 0.5f});
         label->setPosition({52.f, 30.f});
