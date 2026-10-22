@@ -7,8 +7,24 @@
         "ios": "*"
     },
     "id": "yourname.my-first-mod",
-    "name": "My First Mod",
+    "name": "Input Buffer",
     "version": "v1.0.0",
     "developer": "YourName",
-    "description": "Logs a message when a level resets."
+    "description": "Buffers jump clicks pressed just before landing.",
+    "settings": {
+        "enabled": {
+            "type": "bool",
+            "default": true,
+            "name": "Enable input buffer",
+            "description": "Turn the buffer on or off."
+        },
+        "window": {
+            "type": "float",
+            "default": 80,
+            "min": 0,
+            "max": 300,
+            "name": "Buffer window (ms)",
+            "description": "How early before landing a click is remembered."
+        }
+    }
 }
