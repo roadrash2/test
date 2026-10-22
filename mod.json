@@ -8,7 +8,7 @@
     },
     "id": "yourname.my-first-mod",
     "name": "Input Buffer",
-    "version": "v1.0.0",
+    "version": "v1.1.0",
     "developer": "YourName",
     "description": "Buffers jump clicks pressed just before landing.",
     "settings": {
@@ -25,6 +25,12 @@
             "max": 300,
             "name": "Buffer window (ms)",
             "description": "How early before landing a click is remembered."
+        },
+        "indicator": {
+            "type": "bool",
+            "default": true,
+            "name": "Show BUFFERED indicator",
+            "description": "Flash BUFFERED on screen whenever a buffered jump fires."
         }
     }
 }
