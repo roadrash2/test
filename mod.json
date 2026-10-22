@@ -7,30 +7,30 @@
         "ios": "*"
     },
     "id": "yourname.my-first-mod",
-    "name": "Input Buffer",
-    "version": "v1.1.0",
+    "name": "Click Assist",
+    "version": "v2.0.0",
     "developer": "YourName",
-    "description": "Buffers jump clicks pressed just before landing.",
+    "description": "Early clicks are held for you and land on the first valid moment.",
     "settings": {
         "enabled": {
             "type": "bool",
             "default": true,
-            "name": "Enable input buffer",
-            "description": "Turn the buffer on or off."
+            "name": "Enable click assist",
+            "description": "Turn the assist on or off."
         },
         "window": {
             "type": "float",
-            "default": 80,
+            "default": 100,
             "min": 0,
-            "max": 300,
-            "name": "Buffer window (ms)",
-            "description": "How early before landing a click is remembered."
+            "max": 500,
+            "name": "Assist window (ms)",
+            "description": "How early before the perfect moment a click is still caught."
         },
         "indicator": {
             "type": "bool",
             "default": true,
-            "name": "Show BUFFERED indicator",
-            "description": "Flash BUFFERED on screen whenever a buffered jump fires."
+            "name": "Show CLICK ASSIST indicator",
+            "description": "Flash text on screen whenever the assist fires a click for you."
         }
     }
 }
