@@ -33,15 +33,24 @@ class $modify(BufferedPlayer, PlayerObject) {
         bool releaseNext = false;
     };
 
-    bool isMainPlayer() {
+    // Player 1, and player 2 in dual mode
+    bool isTrackedPlayer() {
         auto pl = PlayLayer::get();
-        return pl && this == pl->m_player1;
+        return pl && (this == pl->m_player1 || this == pl->m_player2);
+    }
+
+    // Cube, ball, robot and spider need to be on the ground to act.
+    // Ship, UFO, wave and swing are hold/tap modes with no landing, so skip them.
+    bool needsGround() {
+        return !(m_isShip || m_isBird || m_isDart || m_isSwing);
     }
 
     bool pushButton(PlayerButton btn) {
-        if (btn == PlayerButton::Jump && this->isMainPlayer()) {
+        if (btn == PlayerButton::Jump && this->isTrackedPlayer()) {
             m_fields->held = true;
-            if (Mod::get()->getSettingValue<bool>("enabled") && !m_isOnGround) {
+            if (Mod::get()->getSettingValue<bool>("enabled")
+                && this->needsGround()
+                && !m_isOnGround) {
                 m_fields->pending = true;
                 m_fields->sinceClick = 0.f;
             }
@@ -50,7 +59,7 @@ class $modify(BufferedPlayer, PlayerObject) {
     }
 
     bool releaseButton(PlayerButton btn) {
-        if (btn == PlayerButton::Jump && this->isMainPlayer()) {
+        if (btn == PlayerButton::Jump && this->isTrackedPlayer()) {
             m_fields->held = false;
         }
         return PlayerObject::releaseButton(btn);
@@ -58,7 +67,7 @@ class $modify(BufferedPlayer, PlayerObject) {
 
     void update(float dt) {
         PlayerObject::update(dt);
-        if (!this->isMainPlayer()) return;
+        if (!this->isTrackedPlayer()) return;
 
         if (m_fields->releaseNext) {
             m_fields->releaseNext = false;
@@ -66,6 +75,12 @@ class $modify(BufferedPlayer, PlayerObject) {
         }
 
         if (!m_fields->pending) return;
+
+        // mode changed (e.g. portal into ship) while a click was waiting
+        if (!this->needsGround()) {
+            m_fields->pending = false;
+            return;
+        }
 
         m_fields->sinceClick += dt;
         float windowSec = static_cast<float>(Mod::get()->getSettingValue<double>("window")) / 1000.f;
