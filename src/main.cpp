@@ -1,5 +1,6 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/PlayerObject.hpp>
+#include <Geode/modify/PauseLayer.hpp>
 
 using namespace geode::prelude;
 
@@ -44,21 +45,3 @@ class $modify(BufferedPlayer, PlayerObject) {
         }
 
         if (!m_fields->pending) return;
-
-        m_fields->sinceClick += dt;
-        float windowSec = static_cast<float>(Mod::get()->getSettingValue<double>("window")) / 1000.f;
-
-        if (m_fields->sinceClick > windowSec) {
-            m_fields->pending = false;
-            return;
-        }
-
-        if (m_isOnGround) {
-            m_fields->pending = false;
-            if (!m_fields->held) {
-                PlayerObject::pushButton(PlayerButton::Jump);
-                m_fields->releaseNext = true;
-            }
-        }
-    }
-};
