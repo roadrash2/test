@@ -4,6 +4,27 @@
 
 using namespace geode::prelude;
 
+static void showBufferedIndicator() {
+    if (!Mod::get()->getSettingValue<bool>("indicator")) return;
+
+    auto scene = CCDirector::sharedDirector()->getRunningScene();
+    if (!scene) return;
+
+    auto winSize = CCDirector::sharedDirector()->getWinSize();
+
+    auto label = CCLabelBMFont::create("BUFFERED", "bigFont.fnt");
+    label->setScale(0.5f);
+    label->setColor({0, 255, 120});
+    label->setPosition({winSize.width / 2.f, winSize.height - 40.f});
+    label->runAction(CCSequence::create(
+        CCDelayTime::create(0.15f),
+        CCFadeOut::create(0.35f),
+        CCRemoveSelf::create(),
+        nullptr
+    ));
+    scene->addChild(label, 1000);
+}
+
 class $modify(BufferedPlayer, PlayerObject) {
     struct Fields {
         float sinceClick = 9999.f;
@@ -59,6 +80,8 @@ class $modify(BufferedPlayer, PlayerObject) {
             if (!m_fields->held) {
                 PlayerObject::pushButton(PlayerButton::Jump);
                 m_fields->releaseNext = true;
+                log::info("Buffered jump fired");
+                showBufferedIndicator();
             }
         }
     }
