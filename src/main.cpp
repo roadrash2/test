@@ -30,18 +30,4 @@ class $modify(BufferedPlayer, PlayerObject) {
 
     bool releaseButton(PlayerButton btn) {
         if (btn == PlayerButton::Jump && this->isMainPlayer()) {
-            m_fields->held = false;
-        }
-        return PlayerObject::releaseButton(btn);
-    }
-
-    void update(float dt) {
-        PlayerObject::update(dt);
-        if (!this->isMainPlayer()) return;
-
-        if (m_fields->releaseNext) {
-            m_fields->releaseNext = false;
-            if (!m_fields->held) PlayerObject::releaseButton(PlayerButton::Jump);
-        }
-
-        if (!m_fields->pending) return;
+            m_fields->held =
